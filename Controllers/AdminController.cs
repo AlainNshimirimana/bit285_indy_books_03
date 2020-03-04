@@ -22,20 +22,41 @@ namespace IndyBooks.Controllers
         {
             //TODO: Populate a new AddBookViewModel object with a complete set of Writers
             //      and send it on to the View "AddBook"
+            AddBookViewModel addBookViewModel = new AddBookViewModel
+            {
+                Writers = _db.Writers
+            };
 
-            return View();
+            return View("AddBook", addBookViewModel);
         }
         [HttpPost]
         public IActionResult CreateBook(AddBookViewModel bookVM)
         {
             //TODO: Build the Writer object using the parameter
-            Writer author;
+            Writer author = new Writer();
+            if(bookVM.AuthorId != 0)
+            {
+                author = _db.Writers.Single(a => a.Id == bookVM.Id);
+            }
+            else
+            {
+                author.Name = bookVM.Name;
+            }
             
 
             //TODO: Build the Book using the parameter data and your newly created author.
-            Book book; 
+            Book book;
+            Book newBook = new Book
+            {
+                Title = bookVM.Title,
+                SKU = bookVM.SKU,
+                Price = bookVM.Price,
+                Author = author
+            };
 
             //TODO: Add author and book to their DbSets; SaveChanges
+            _db.Books.Add(newBook);
+            _db.SaveChanges();
            
 
             //Shows the book using the Index View 
@@ -47,9 +68,17 @@ namespace IndyBooks.Controllers
         [HttpGet]
         public IActionResult Index(long id)
         {
-            IQueryable<Book> books = _db.Books;
+            IQueryable<Book> books = _db.Books.Include(b => b.Author);
             //TODO: filter books by the id (if passed an id as its Route Parameter),
             //     otherwise use the entire collection of Books, ordered by SKU.
+            if(id != 0)
+            {
+                var book = _db.Books.Single(b => b.Id == id);
+            }
+            else
+            {
+                var book = _db.Books.OrderBy(b => b.SKU);
+            }
 
 
             return View("SearchResults", books);
@@ -68,6 +97,10 @@ namespace IndyBooks.Controllers
         public IActionResult DeleteBook(long id)
         {
             //TODO: Remove the Book associated with the given id number; Save Changes
+            var book = _db.Books.Single(b => b.Id == id);
+            _db.Books.Remove(book);
+            _db.SaveChanges();
+
 
 
             return RedirectToAction("Index");
